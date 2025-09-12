@@ -1,6 +1,8 @@
 using System.Text;
 using MetalfluxApi.Server;
+using MetalfluxApi.Server.Authentication.Service;
 using MetalfluxApi.Server.Core.Middleware;
+using MetalfluxApi.Server.Modules.User;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -17,7 +19,14 @@ if (builder.Configuration["Jwt:Secret"] == null)
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("TestDb"));
 
-// Add services to the container.
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+
+builder.Services.AddSingleton<TokenProvider>();
+
 builder.Services.AddControllers();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -52,14 +61,8 @@ builder
         {
             OnMessageReceived = ctx =>
             {
-                if (
-                    ctx.Request.Cookies.ContainsKey(
-                        builder.Configuration["Jwt:SessionTokenCookieName"]!
-                    )
-                )
-                    ctx.Token = ctx.Request.Cookies[
-                        builder.Configuration["Jwt:SessionTokenCookieName"]!
-                    ];
+                if (ctx.Request.Cookies.ContainsKey(builder.Configuration["Jwt:TokenCookieName"]!))
+                    ctx.Token = ctx.Request.Cookies[builder.Configuration["Jwt:TokenCookieName"]!];
 
                 return Task.CompletedTask;
             },

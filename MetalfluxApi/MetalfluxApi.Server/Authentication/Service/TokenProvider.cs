@@ -16,18 +16,7 @@ public sealed class TokenProvider(IConfiguration configuration)
     /// <returns>Session time token generated</returns>
     public string GenerateAccessToken(UserDto user, out DateTime expiration)
     {
-        return GenerateToken(user, out expiration, "Jwt:ExpirationInMinutes");
-    }
-
-    /// <summary>
-    /// Generate the refresh token used to access to resources of the API. <br/> See Jwt:RefreshExpirationInDays in app's config to see its duration.
-    /// </summary>
-    /// <param name="user">User that requested a token generation</param>
-    /// <param name="expiration">Return the token expiration</param>
-    /// <returns>Refresh token generated</returns>
-    public string GenerateRefreshToken(UserDto user, out DateTime expiration)
-    {
-        return GenerateToken(user, out expiration, "Jwt:RefreshExpirationInDays");
+        return GenerateToken(user, out expiration, "Jwt:ExpirationInDays");
     }
 
     /// <summary>
@@ -50,7 +39,7 @@ public sealed class TokenProvider(IConfiguration configuration)
         var tokenDescriptor = GenerateTokenDescriptor(credentials, user);
         expiration =
             tokenDescriptor.Expires
-            ?? DateTime.UtcNow.AddMinutes(configuration.GetValue<int>(expirationConfigKey));
+            ?? DateTime.UtcNow.AddDays(configuration.GetValue<int>(expirationConfigKey));
         var handler = new JsonWebTokenHandler();
 
         return handler.CreateToken(tokenDescriptor);
@@ -77,9 +66,7 @@ public sealed class TokenProvider(IConfiguration configuration)
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 ]
             ),
-            Expires = DateTime.UtcNow.AddMinutes(
-                configuration.GetValue<int>("Jwt:ExpirationInMinutes")
-            ),
+            Expires = DateTime.UtcNow.AddDays(configuration.GetValue<int>("Jwt:ExpirationInDays")),
             SigningCredentials = credentials,
             Issuer = configuration["Jwt:Issuer"],
             Audience = configuration["Jwt:Audience"],
@@ -109,7 +96,7 @@ public sealed class TokenProvider(IConfiguration configuration)
                     ValidateAudience = true,
                     ValidAudience = configuration["Jwt:Audience"],
                     ClockSkew = TimeSpan.Zero,
-                    ValidateLifetime = true, // Vérifie si le token est expiré
+                    ValidateLifetime = true, // Checks if token is expired
                 }
             )
             .Result;
@@ -151,7 +138,7 @@ public sealed class TokenProvider(IConfiguration configuration)
                     ValidateAudience = true,
                     ValidAudience = configuration["Jwt:Audience"],
                     ClockSkew = TimeSpan.Zero,
-                    ValidateLifetime = true, // Vérifie si le token est expiré
+                    ValidateLifetime = true, // Checks if token si expired
                 }
             )
             .Result;

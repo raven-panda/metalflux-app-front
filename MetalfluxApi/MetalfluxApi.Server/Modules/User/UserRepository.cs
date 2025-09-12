@@ -32,8 +32,8 @@ internal sealed class UserRepository(AppDbContext context) : IUserRepository
 
     public UserModel Add(UserModel item)
     {
-        item.CreatedAt = DateTime.Now;
-        item.UpdatedAt = DateTime.Now;
+        item.CreatedAt = DateTime.UtcNow;
+        item.UpdatedAt = DateTime.UtcNow;
 
         context.Users.Add(item);
         context.SaveChanges();
