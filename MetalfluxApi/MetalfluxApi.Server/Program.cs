@@ -13,34 +13,34 @@ if (builder.Configuration["Jwt:Secret"] == null)
         nameof(builder.Configuration),
         "Jwt:Secret configuration is null"
     );
-if (builder.Configuration["AllowedOrigins"] == null)
-    throw new ArgumentNullException(
-        nameof(builder.Configuration),
-        "AllowedOrigins configuration is null"
-    );
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDatabase("TestDb"));
 
 // Add services to the container.
 builder.Services.AddControllers();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddCors(options =>
+var allowedOrigins = builder.Configuration["AllowedOrigins"];
+if (allowedOrigins != null)
 {
-    options.AddPolicy(
-        name: corsPolicyName,
-        policy =>
-        {
-            policy
-                .WithOrigins(builder.Configuration["AllowedOrigins"]!.Split(";"))
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
-        }
-    );
-});
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy(
+            name: corsPolicyName,
+            policy =>
+            {
+                policy
+                    .WithOrigins(allowedOrigins.Split(";"))
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            }
+        );
+    });
+}
 
 builder
     .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -79,13 +79,14 @@ var app = builder.Build();
 app.UsePathBase("/api/v1");
 app.UseStaticFiles();
 
+/*
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
+*/
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
