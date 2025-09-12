@@ -2,6 +2,7 @@ using System.Text;
 using MetalfluxApi.Server;
 using MetalfluxApi.Server.Authentication.Service;
 using MetalfluxApi.Server.Core.Middleware;
+using MetalfluxApi.Server.Core.Service;
 using MetalfluxApi.Server.Modules.Media;
 using MetalfluxApi.Server.Modules.User;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -30,6 +31,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 
 builder.Services.AddSingleton<TokenProvider>();
+builder.Services.AddSingleton<S3Service>();
 
 builder.Services.AddControllers();
 

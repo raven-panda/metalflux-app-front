@@ -24,6 +24,7 @@ internal sealed class MediaRepository(AppDbContext context) : IMediaRepository
     {
         item.CreatedAt = DateTime.UtcNow;
         item.UpdatedAt = DateTime.UtcNow;
+        item.HasUploadedMedia = false;
 
         context.Medias.Add(item);
         context.SaveChanges();
@@ -63,6 +64,7 @@ internal sealed class MediaRepository(AppDbContext context) : IMediaRepository
     {
         var query = context
             .Medias.Where(m => m.Name.Contains(body.SearchQuery))
+            .Where(m => m.HasUploadedMedia)
             .Where(m => m.Id > body.NextCursor)
             .OrderBy(m => m.Id)
             .Take(CursorSearchRequestDto.MaxResponseSize);

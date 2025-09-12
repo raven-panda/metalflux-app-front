@@ -1,15 +1,17 @@
 ﻿using MetalfluxApi.Server.Core.Base;
 using MetalfluxApi.Server.Core.Dto;
 using MetalfluxApi.Server.Core.Exceptions;
+using MetalfluxApi.Server.Core.Service;
 
 namespace MetalfluxApi.Server.Modules.Media;
 
 public interface IMediaService : IService<MediaDto, MediaModel>
 {
     List<MediaDto> Search(CursorSearchRequestDto body, out int lastId, out bool lastItemReached);
+    (MediaDto dto, string url) AddAndGetUrlForUpload(MediaDto item);
 }
 
-internal sealed class MediaService(IMediaRepository repository) : IMediaService
+internal sealed class MediaService(IMediaRepository repository, S3Service s3Service) : IMediaService
 {
     public MediaDto Get(int id)
     {
@@ -20,8 +22,19 @@ internal sealed class MediaService(IMediaRepository repository) : IMediaService
         return ToDto(item);
     }
 
+    public (MediaDto dto, string url) AddAndGetUrlForUpload(MediaDto item)
+    {
+        var createdMedia = Add(item);
+        var presignedUrl = s3Service.GetPresignedUploadUrl(
+            $"{createdMedia.Id.ToString()!}.{createdMedia.FileExtension}"
+        );
+
+        return (createdMedia, presignedUrl);
+    }
+
     public MediaDto Add(MediaDto item)
     {
+        item.Url = "";
         return ToDto(repository.Add(ToModel(item)));
     }
 
@@ -56,7 +69,8 @@ internal sealed class MediaService(IMediaRepository repository) : IMediaService
         {
             Id = model.Id,
             Name = model.Name,
-            Url = model.Url,
+            Url = s3Service.GetPresignedDownloadUrl(model.Id.ToString()),
+            FileExtension = model.FileExtension,
             CreatedAt = model.CreatedAt,
             UpdatedAt = model.UpdatedAt,
         };
@@ -76,6 +90,7 @@ internal sealed class MediaService(IMediaRepository repository) : IMediaService
             {
                 Name = dto.Name,
                 Url = dto.Url,
+                FileExtension = dto.FileExtension,
                 CreatedAt = dto.CreatedAt,
                 UpdatedAt = dto.UpdatedAt,
             };

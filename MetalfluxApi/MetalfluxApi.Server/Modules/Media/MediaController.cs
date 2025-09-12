@@ -7,6 +7,13 @@ namespace MetalfluxApi.Server.Modules.Media;
 [ApiController]
 public class MediaController(IMediaService service) : ControllerBase
 {
+    [HttpGet("{id:int}")]
+    public IActionResult GetById(int id)
+    {
+        var media = service.Get(id);
+        return Ok(media);
+    }
+
     [HttpPost("browse")]
     public IActionResult Search(CursorSearchRequestDto body)
     {
@@ -24,7 +31,7 @@ public class MediaController(IMediaService service) : ControllerBase
     [HttpPost("post")]
     public IActionResult PostMedia(MediaDto body)
     {
-        var media = service.Add(body);
-        return Ok(media);
+        var (media, uploadUrl) = service.AddAndGetUrlForUpload(body);
+        return Ok(new { media, uploadUrl });
     }
 }

@@ -9,8 +9,13 @@ public class MediaDto
     [Required]
     public string Url { get; set; } = string.Empty;
 
+    [Required]
+    public string FileExtension { get; set; } = string.Empty;
+
     [Required, StringLength(80)]
     public string Name { get; set; } = string.Empty;
+
+    public bool HasUploadedMedia { get; set; } = false;
 
     [Required]
     public DateTime CreatedAt { get; set; }

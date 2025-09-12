@@ -11,7 +11,12 @@ public class MediaModel
     public string Url { get; set; } = string.Empty;
 
     [Required]
+    public string FileExtension { get; set; } = string.Empty;
+
+    [Required]
     public string Name { get; set; } = string.Empty;
+
+    public bool HasUploadedMedia { get; set; } = false;
 
     [Required]
     public DateTime CreatedAt { get; set; }
