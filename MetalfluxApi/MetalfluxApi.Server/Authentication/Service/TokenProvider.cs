@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 using System.Text;
-using MetalfluxApi.Server.Core.User;
+using MetalfluxApi.Server.Modules.User;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
