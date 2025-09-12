@@ -1,5 +1,6 @@
 using System.Text;
 using MetalfluxApi.Server;
+using MetalfluxApi.Server.Core.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -78,6 +79,8 @@ builder.Services.AddAuthorization();
 var app = builder.Build();
 app.UsePathBase("/api/v1");
 app.UseStaticFiles();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 /*
 using (var scope = app.Services.CreateScope())
