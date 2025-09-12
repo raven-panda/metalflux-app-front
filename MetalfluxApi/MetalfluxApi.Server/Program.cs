@@ -2,6 +2,7 @@ using System.Text;
 using MetalfluxApi.Server;
 using MetalfluxApi.Server.Authentication.Service;
 using MetalfluxApi.Server.Core.Middleware;
+using MetalfluxApi.Server.Modules.Media;
 using MetalfluxApi.Server.Modules.User;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,9 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseInMemoryDataba
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
+
+builder.Services.AddScoped<IMediaRepository, MediaRepository>();
+builder.Services.AddScoped<IMediaService, MediaService>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
