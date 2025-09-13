@@ -1,0 +1,38 @@
+header#app-header {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+  align-items: center;
+  padding: 16px 32px;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+}
+
+a#app-logo-link {
+  font-size: 1.5rem;
+  margin-left: 24px;
+  text-decoration: none;
+  color: var(--color-main-1);
+}
+
+button#trigger-menu-button {
+  background-color: transparent;
+  border: none;
+  padding: 10px;
+  border-radius: 100%;
+  
+  > svg {
+    display: block;
+  }
+
+  &:focus-visible, &:hover {
+    background-color: var(--color-transparent-fade-1);
+  }
+
+  &:active {
+    background-color: var(--color-transparent-fade-2);
+  }
+}
