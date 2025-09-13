@@ -1,4 +1,5 @@
 ﻿using MetalfluxApi.Server.Core.Dto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MetalfluxApi.Server.Modules.Media;
@@ -7,13 +8,6 @@ namespace MetalfluxApi.Server.Modules.Media;
 [ApiController]
 public class MediaController(IMediaService service) : ControllerBase
 {
-    [HttpGet("{id:int}")]
-    public IActionResult GetById(int id)
-    {
-        var media = service.Get(id);
-        return Ok(media);
-    }
-
     [HttpPost("browse")]
     public IActionResult Search(CursorSearchRequestDto body)
     {
@@ -28,17 +22,10 @@ public class MediaController(IMediaService service) : ControllerBase
         );
     }
 
-    [HttpPost("create")]
-    public IActionResult CreateMedia(MediaDto body)
+    [HttpGet("{id:int}")]
+    public IActionResult GetById(int id)
     {
-        var media = service.Add(body);
-        return Ok(media);
-    }
-
-    [HttpPost("{id:int}/upload-media")]
-    public async Task<IActionResult> UploadMedia(int id, [FromForm] IFormFile file)
-    {
-        var media = await service.UploadMedia(id, file);
+        var media = service.Get(id);
         return Ok(media);
     }
 
@@ -47,5 +34,21 @@ public class MediaController(IMediaService service) : ControllerBase
     {
         var (mediaStream, contentType, fileName) = await service.GetMediaStream(id);
         return File(mediaStream, contentType, fileName);
+    }
+
+    [Authorize]
+    [HttpPost("create")]
+    public IActionResult CreateMedia(MediaDto body)
+    {
+        var media = service.Add(body);
+        return Ok(media);
+    }
+
+    [Authorize]
+    [HttpPost("{id:int}/upload-media")]
+    public async Task<IActionResult> UploadMedia(int id, [FromForm] IFormFile file)
+    {
+        var media = await service.UploadMedia(id, file);
+        return Ok(media);
     }
 }

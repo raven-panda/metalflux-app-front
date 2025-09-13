@@ -11,6 +11,9 @@ public class MediaModel
     public string FileExtension { get; set; } = string.Empty;
 
     [Required]
+    public string ContentType { get; set; } = string.Empty;
+
+    [Required]
     public string Name { get; set; } = string.Empty;
 
     public bool HasUploadedMedia { get; set; } = false;

@@ -65,7 +65,13 @@ internal sealed class MediaService(
         var item = repository.Get(id);
         if (item == null)
             throw new EntityNotFoundException("Media", id);
+        if (item.HasUploadedMedia)
+            throw new BadHttpRequestException(
+                $"File already uploaded for media {item.Id}. Please create a new one instead."
+            );
 
+        item.FileExtension = file.FileName.Split('.').Last();
+        item.ContentType = file.ContentType;
         var fileName = $"{item.Id}.{item.FileExtension}";
 
         await using var stream = file.OpenReadStream();
@@ -95,10 +101,13 @@ internal sealed class MediaService(
 
     public MediaDto Update(MediaDto item)
     {
-        if (!repository.Exists(item.Id))
-            throw new EntityNotFoundException("User", item.Id);
+        var model = repository.Get(item.Id);
+        if (model == null)
+            throw new EntityNotFoundException("Media", item.Id);
 
-        return ToDto(repository.Update(ToModel(item)));
+        model.Name = item.Name;
+        model.UpdatedAt = DateTime.UtcNow;
+        return ToDto(repository.Update(model));
     }
 
     public List<MediaDto> Search(
@@ -117,6 +126,7 @@ internal sealed class MediaService(
             Id = model.Id,
             Name = model.Name,
             FileExtension = model.FileExtension,
+            ContentType = model.ContentType,
             HasUploadedMedia = model.HasUploadedMedia,
             CreatedAt = model.CreatedAt,
             UpdatedAt = model.UpdatedAt,
@@ -136,7 +146,6 @@ internal sealed class MediaService(
             ?? new MediaModel
             {
                 Name = dto.Name,
-                FileExtension = dto.FileExtension,
                 HasUploadedMedia = dto.HasUploadedMedia,
                 CreatedAt = dto.CreatedAt,
                 UpdatedAt = dto.UpdatedAt,

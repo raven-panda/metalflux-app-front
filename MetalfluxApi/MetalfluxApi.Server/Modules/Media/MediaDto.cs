@@ -6,8 +6,8 @@ public class MediaDto
 {
     public int? Id { get; set; }
 
-    [Required]
     public string FileExtension { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
 
     [Required, StringLength(80)]
     public string Name { get; set; } = string.Empty;
