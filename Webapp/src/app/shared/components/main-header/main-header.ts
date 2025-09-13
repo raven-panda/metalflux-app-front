@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
-import { AuthRoutingModule } from "../../auth/auth-routing-module";
 import { SearchForm } from './search-form/search-form';
+import { AuthRoutingModule } from '../../../view/auth/auth-routing-module';
 
 @Component({
   selector: 'app-main-header',
