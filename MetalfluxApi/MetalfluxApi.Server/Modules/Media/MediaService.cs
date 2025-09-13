@@ -66,11 +66,13 @@ internal sealed class MediaService(
         if (item == null)
             throw new EntityNotFoundException("Media", id);
 
+        var fileName = $"{item.Id}.{item.FileExtension}";
+
         await using var stream = file.OpenReadStream();
         var putRequest = new PutObjectRequest
         {
             BucketName = configuration["S3:BucketName"],
-            Key = $"{item.Id}.{item.FileExtension}",
+            Key = fileName,
             InputStream = stream,
             ContentType = file.ContentType,
         };
@@ -78,6 +80,7 @@ internal sealed class MediaService(
         await s3Service.PutObjectAsync(putRequest);
 
         item.UpdatedAt = DateTime.UtcNow;
+        item.HasUploadedMedia = true;
         repository.Update(item);
         return ToDto(item);
     }
@@ -114,6 +117,7 @@ internal sealed class MediaService(
             Id = model.Id,
             Name = model.Name,
             FileExtension = model.FileExtension,
+            HasUploadedMedia = model.HasUploadedMedia,
             CreatedAt = model.CreatedAt,
             UpdatedAt = model.UpdatedAt,
         };
@@ -133,6 +137,7 @@ internal sealed class MediaService(
             {
                 Name = dto.Name,
                 FileExtension = dto.FileExtension,
+                HasUploadedMedia = dto.HasUploadedMedia,
                 CreatedAt = dto.CreatedAt,
                 UpdatedAt = dto.UpdatedAt,
             };

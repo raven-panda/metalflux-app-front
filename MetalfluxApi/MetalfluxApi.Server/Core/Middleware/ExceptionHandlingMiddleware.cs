@@ -68,19 +68,54 @@ public class ExceptionHandlingMiddleware(
             ),
             BadHttpRequestException => (
                 (int)HttpStatusCode.BadRequest,
-                "Bad Request",
-                "https://tools.ietf.org/html/rfc9110#section-15.5.1"
+                GetTitleFromStatusCode(HttpStatusCode.BadRequest),
+                GetTypeFromStatusCode(HttpStatusCode.BadRequest)
             ),
             NotImplementedException => (
                 (int)HttpStatusCode.NotImplemented,
-                "Not Implemented",
-                "https://tools.ietf.org/html/rfc9110#section-15.6.2"
+                GetTitleFromStatusCode(HttpStatusCode.NotImplemented),
+                GetTypeFromStatusCode(HttpStatusCode.NotImplemented)
+            ),
+            HttpRequestException exception => (
+                exception.StatusCode.HasValue
+                    ? (int)exception.StatusCode!
+                    : (int)HttpStatusCode.InternalServerError,
+                GetTitleFromStatusCode(exception.StatusCode),
+                GetTypeFromStatusCode(exception.StatusCode)
             ),
             _ => (
                 (int)HttpStatusCode.InternalServerError,
-                "Internal Server Error",
-                "https://tools.ietf.org/html/rfc9110#section-15.6.1"
+                GetTitleFromStatusCode(HttpStatusCode.InternalServerError),
+                GetTypeFromStatusCode(HttpStatusCode.InternalServerError)
             ),
+        };
+    }
+
+    private static string GetTitleFromStatusCode(HttpStatusCode? statusCode)
+    {
+        statusCode ??= HttpStatusCode.InternalServerError;
+
+        return statusCode.Value switch
+        {
+            HttpStatusCode.BadRequest => "Bad Request",
+            HttpStatusCode.NotImplemented => "Not Implemented",
+            HttpStatusCode.NotFound => "Not Found",
+            _ => "Internal Server Error",
+        };
+    }
+
+    private static string GetTypeFromStatusCode(HttpStatusCode? statusCode)
+    {
+        statusCode ??= HttpStatusCode.InternalServerError;
+
+        return statusCode.Value switch
+        {
+            HttpStatusCode.BadRequest => "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+            HttpStatusCode.NotImplemented => "https://tools.ietf.org/html/rfc9110#section-15.6.2",
+            HttpStatusCode.InternalServerError =>
+                "https://tools.ietf.org/html/rfc9110#section-15.6.1",
+            HttpStatusCode.NotFound => "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+            _ => string.Empty,
         };
     }
 }
