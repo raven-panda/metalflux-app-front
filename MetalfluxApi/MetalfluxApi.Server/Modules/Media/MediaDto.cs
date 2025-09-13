@@ -6,8 +6,6 @@ public class MediaDto
 {
     public int? Id { get; set; }
 
-    public string? Url { get; set; } = string.Empty;
-
     [Required]
     public string FileExtension { get; set; } = string.Empty;
 

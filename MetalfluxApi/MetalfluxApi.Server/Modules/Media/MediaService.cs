@@ -113,9 +113,6 @@ internal sealed class MediaService(
         {
             Id = model.Id,
             Name = model.Name,
-            Url = s3Service.GetPresignedDownloadUrl(
-                $"{model.Id.ToString()!}.{model.FileExtension}"
-            ),
             FileExtension = model.FileExtension,
             CreatedAt = model.CreatedAt,
             UpdatedAt = model.UpdatedAt,
