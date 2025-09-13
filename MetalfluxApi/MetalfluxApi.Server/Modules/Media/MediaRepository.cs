@@ -43,10 +43,6 @@ internal sealed class MediaRepository(AppDbContext context) : IMediaRepository
     public MediaModel Update(MediaModel item)
     {
         var entity = context.Medias.Find(item.Id)!;
-        if (entity.Url != item.Url)
-            throw new BadHttpRequestException(
-                "Cannot change media URL. Remove it and create a new one instead."
-            );
 
         entity.UpdatedAt = DateTime.UtcNow;
         entity.Name = item.Name;

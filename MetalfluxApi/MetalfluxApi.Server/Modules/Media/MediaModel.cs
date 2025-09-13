@@ -8,9 +8,6 @@ public class MediaModel
     public int Id { get; set; }
 
     [Required]
-    public string Url { get; set; } = string.Empty;
-
-    [Required]
     public string FileExtension { get; set; } = string.Empty;
 
     [Required]

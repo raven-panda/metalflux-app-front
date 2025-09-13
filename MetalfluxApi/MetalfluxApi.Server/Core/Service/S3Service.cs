@@ -37,4 +37,16 @@ internal sealed class S3Service(IConfiguration configuration)
 
         return _s3Client.GetPreSignedURL(request);
     }
+
+    public async Task PutObjectAsync(PutObjectRequest request)
+    {
+        await _s3Client.PutObjectAsync(request);
+    }
+
+    public async Task<Stream> GetObjectAsync(GetObjectRequest request)
+    {
+        var response = await _s3Client.GetObjectAsync(request);
+        var stream = response.ResponseStream;
+        return stream;
+    }
 }

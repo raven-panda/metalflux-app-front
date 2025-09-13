@@ -1,17 +1,24 @@
-﻿using MetalfluxApi.Server.Core.Base;
+﻿using Amazon.S3.Model;
+using MetalfluxApi.Server.Core.Base;
 using MetalfluxApi.Server.Core.Dto;
 using MetalfluxApi.Server.Core.Exceptions;
 using MetalfluxApi.Server.Core.Service;
+using Microsoft.AspNetCore.StaticFiles;
 
 namespace MetalfluxApi.Server.Modules.Media;
 
 public interface IMediaService : IService<MediaDto, MediaModel>
 {
     List<MediaDto> Search(CursorSearchRequestDto body, out int lastId, out bool lastItemReached);
-    (MediaDto dto, string url) AddAndGetUrlForUpload(MediaDto item);
+    Task<MediaDto> UploadMedia(int id, IFormFile file);
+    Task<(Stream file, string contentType, string fileName)> GetMediaStream(int id);
 }
 
-internal sealed class MediaService(IMediaRepository repository, S3Service s3Service) : IMediaService
+internal sealed class MediaService(
+    IMediaRepository repository,
+    S3Service s3Service,
+    IConfiguration configuration
+) : IMediaService
 {
     public MediaDto Get(int id)
     {
@@ -22,20 +29,57 @@ internal sealed class MediaService(IMediaRepository repository, S3Service s3Serv
         return ToDto(item);
     }
 
-    public (MediaDto dto, string url) AddAndGetUrlForUpload(MediaDto item)
+    public async Task<(Stream file, string contentType, string fileName)> GetMediaStream(int id)
     {
-        var createdMedia = Add(item);
-        var presignedUrl = s3Service.GetPresignedUploadUrl(
-            $"{createdMedia.Id.ToString()!}.{createdMedia.FileExtension}"
-        );
+        var item = repository.Get(id);
+        if (item == null)
+            throw new EntityNotFoundException("Media", id);
 
-        return (createdMedia, presignedUrl);
+        var fileName = $"{item.Id}.{item.FileExtension}";
+
+        var getRequest = new GetObjectRequest
+        {
+            BucketName = configuration["S3:BucketName"],
+            Key = fileName,
+        };
+
+        var mediaFile = await s3Service.GetObjectAsync(getRequest);
+        var success = new FileExtensionContentTypeProvider().TryGetContentType(
+            fileName,
+            out var contentType
+        );
+        if (!success || contentType == null)
+            throw new Exception("Could not parse content type");
+
+        return (mediaFile, contentType, fileName);
     }
 
     public MediaDto Add(MediaDto item)
     {
-        item.Url = "";
-        return ToDto(repository.Add(ToModel(item)));
+        var created = ToDto(repository.Add(ToModel(item)));
+        return created;
+    }
+
+    public async Task<MediaDto> UploadMedia(int id, IFormFile file)
+    {
+        var item = repository.Get(id);
+        if (item == null)
+            throw new EntityNotFoundException("Media", id);
+
+        await using var stream = file.OpenReadStream();
+        var putRequest = new PutObjectRequest
+        {
+            BucketName = configuration["S3:BucketName"],
+            Key = $"{item.Id}.{item.FileExtension}",
+            InputStream = stream,
+            ContentType = file.ContentType,
+        };
+
+        await s3Service.PutObjectAsync(putRequest);
+
+        item.UpdatedAt = DateTime.UtcNow;
+        repository.Update(item);
+        return ToDto(item);
     }
 
     public int Remove(int id)
@@ -65,11 +109,13 @@ internal sealed class MediaService(IMediaRepository repository, S3Service s3Serv
 
     public MediaDto ToDto(MediaModel model)
     {
-        return new MediaDto()
+        return new MediaDto
         {
             Id = model.Id,
             Name = model.Name,
-            Url = s3Service.GetPresignedDownloadUrl(model.Id.ToString()),
+            Url = s3Service.GetPresignedDownloadUrl(
+                $"{model.Id.ToString()!}.{model.FileExtension}"
+            ),
             FileExtension = model.FileExtension,
             CreatedAt = model.CreatedAt,
             UpdatedAt = model.UpdatedAt,
@@ -89,7 +135,6 @@ internal sealed class MediaService(IMediaRepository repository, S3Service s3Serv
             ?? new MediaModel
             {
                 Name = dto.Name,
-                Url = dto.Url,
                 FileExtension = dto.FileExtension,
                 CreatedAt = dto.CreatedAt,
                 UpdatedAt = dto.UpdatedAt,
