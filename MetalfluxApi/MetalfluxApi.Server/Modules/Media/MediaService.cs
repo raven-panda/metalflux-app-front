@@ -9,6 +9,7 @@ namespace MetalfluxApi.Server.Modules.Media;
 
 public interface IMediaService : IService<MediaDto, MediaModel>
 {
+    UserSelectionResponse GetUserSelection(int userId);
     List<MediaDto> Search(CursorSearchRequestDto body, out int lastId, out bool lastItemReached);
     Task<MediaDto> UploadMedia(int id, IFormFile file);
     Task<(Stream file, string contentType, string fileName)> GetMediaStream(int id);
@@ -27,6 +28,18 @@ internal sealed class MediaService(
             throw new EntityNotFoundException("Media", id);
 
         return ToDto(item);
+    }
+
+    public UserSelectionResponse GetUserSelection(int userId)
+    {
+        // TODO : implement that
+        var item = repository.Search(
+            new CursorSearchRequestDto { NextCursor = 0, SearchQuery = "" },
+            out _,
+            out _
+        );
+
+        return new UserSelectionResponse(ToDto(item), ToDto(item));
     }
 
     public async Task<(Stream file, string contentType, string fileName)> GetMediaStream(int id)

@@ -1,4 +1,5 @@
-﻿using MetalfluxApi.Server.Core.Dto;
+﻿using MetalfluxApi.Server.Authentication.Service;
+using MetalfluxApi.Server.Core.Dto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,31 +7,46 @@ namespace MetalfluxApi.Server.Modules.Media;
 
 [Route("media")]
 [ApiController]
-public class MediaController(IMediaService service) : ControllerBase
+public class MediaController(
+    IMediaService service,
+    TokenProvider tokenProvider,
+    IConfiguration configuration
+) : ControllerBase
 {
+    [HttpGet("user-selection")]
+    [Authorize]
+    public UserSelectionResponse GetUserSelection()
+    {
+        var (userId, _) = tokenProvider.ParseUserToken(
+            Request.Cookies[configuration["Jwt:RefreshTokenCookieName"]!]!
+        );
+
+        var selection = service.GetUserSelection(userId);
+        return selection;
+    }
+
     [HttpPost("browse")]
-    public IActionResult Search(CursorSearchRequestDto body)
+    public CursorResponse<MediaDto> Search(CursorSearchRequestDto body)
     {
         var medias = service.Search(body, out var lastId, out var lastItemReached);
-        return Ok(
-            new CursorResponse<MediaDto>()
-            {
-                Data = medias,
-                NextCursor = lastId,
-                LastItemReached = lastItemReached,
-            }
-        );
+        return new CursorResponse<MediaDto>()
+        {
+            Data = medias,
+            NextCursor = lastId,
+            LastItemReached = lastItemReached,
+        };
     }
 
     [HttpGet("{id:int}")]
-    public IActionResult GetById(int id)
+    public MediaDto GetById(int id)
     {
         var media = service.Get(id);
-        return Ok(media);
+        return media;
     }
 
     [HttpGet("{id:int}/stream")]
-    public async Task<IActionResult> GetMediaStream(int id)
+    [ProducesResponseType(typeof(FileStreamResult), StatusCodes.Status200OK)]
+    public async Task<FileStreamResult> GetMediaStream(int id)
     {
         var (mediaStream, contentType, fileName) = await service.GetMediaStream(id);
         return File(mediaStream, contentType, fileName);
@@ -38,17 +54,17 @@ public class MediaController(IMediaService service) : ControllerBase
 
     [Authorize]
     [HttpPost("create")]
-    public IActionResult CreateMedia(MediaDto body)
+    public MediaDto CreateMedia(MediaDto body)
     {
         var media = service.Add(body);
-        return Ok(media);
+        return media;
     }
 
     [Authorize]
     [HttpPost("{id:int}/upload-media")]
-    public async Task<IActionResult> UploadMedia(int id, [FromForm] IFormFile file)
+    public async Task<MediaDto> UploadMedia([FromForm] int id, IFormFile file)
     {
         var media = await service.UploadMedia(id, file);
-        return Ok(media);
+        return media;
     }
 }
