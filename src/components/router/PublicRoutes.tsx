@@ -23,7 +23,7 @@ const browseRoute = createRoute({
 });
 const mediaRoute = createRoute({
   getParentRoute: () => publicRouteRoot,
-  path: "/media/{id}",
+  path: "/media/$id",
   component: BrowsePage,
 });
 
